@@ -1,4 +1,5 @@
 # WBS Visual Planner
+**[🚀 Live Demo / Play Here](https://my-wbs-planner.vercel.app/)**
 
 A clean, interactive, and lightweight web application for creating Work Breakdown Structures (WBS) and hierarchical visual mind maps. Built entirely with Vanilla JavaScript, HTML, and CSS (no frameworks). Designed for personal life planning, deep thinking, and breaking down large projects into manageable, auto-numbered tasks.
 
