@@ -1,5 +1,53 @@
 let state = { projects: {}, activeProjectId: null, customColors: ['#bf616a', '#ebcb8b', '#a3be8c'], selectedNodeId: null };
 
+// --- CUSTOM UI DIALOG ---
+const CustomUI = {
+    show: (type, title, message, defaultValue = '') => {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('ui-modal');
+            const input = document.getElementById('ui-modal-input');
+            const btnCancel = document.getElementById('ui-modal-cancel');
+            const btnConfirm = document.getElementById('ui-modal-confirm');
+
+            document.getElementById('ui-modal-title').innerText = title;
+            document.getElementById('ui-modal-message').innerText = message;
+            
+            input.classList.add('hidden');
+            btnCancel.classList.add('hidden');
+            
+            if (type === 'prompt') {
+                input.classList.remove('hidden');
+                input.value = defaultValue;
+            }
+            if (type === 'prompt' || type === 'confirm') {
+                btnCancel.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            if (type === 'prompt') input.focus();
+
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                btnConfirm.onclick = null;
+                btnCancel.onclick = null;
+            };
+
+            btnConfirm.onclick = () => {
+                cleanup();
+                resolve(type === 'prompt' ? input.value : true);
+            };
+
+            btnCancel.onclick = () => {
+                cleanup();
+                resolve(type === 'prompt' ? null : false);
+            };
+        });
+    },
+    alert: (title, message) => CustomUI.show('alert', title, message),
+    confirm: (title, message) => CustomUI.show('confirm', title, message),
+    prompt: (title, message, defaultVal) => CustomUI.show('prompt', title, message, defaultVal)
+};
+
 function createEmptyProject(name) {
     return {
         id: 'proj_' + Date.now(),
@@ -272,9 +320,9 @@ projectSelect.addEventListener('change', (e) => {
     saveData(); renderTree();
 });
 
-document.getElementById('btn-new-project').addEventListener('click', () => {
-    const name = prompt('Project Name:', 'New Project');
-    if (name) {
+document.getElementById('btn-new-project').addEventListener('click', async () => {
+    const name = await CustomUI.prompt('New Project', 'Enter project name:', 'New Project');
+    if (name && name.trim()) {
         const newProj = createEmptyProject(name);
         state.projects[newProj.id] = newProj; state.activeProjectId = newProj.id;
         scale = 1; currentTranslate = {x: 0, y: 0}; applyTransform();
@@ -282,15 +330,23 @@ document.getElementById('btn-new-project').addEventListener('click', () => {
     }
 });
 
-document.getElementById('btn-rename-project').addEventListener('click', () => {
+document.getElementById('btn-rename-project').addEventListener('click', async () => {
     const active = state.projects[state.activeProjectId];
-    const name = prompt('Rename Project:', active.name);
-    if (name) { active.name = name; saveData(); updateProjectSelect(); }
+    const name = await CustomUI.prompt('Rename Project', 'Enter new project name:', active.name);
+    
+    if (name !== null && name.trim() !== '') { 
+        active.name = name.trim(); 
+        saveData(); 
+        updateProjectSelect(); 
+    }
 });
 
-document.getElementById('btn-delete-project').addEventListener('click', () => {
-    if (Object.keys(state.projects).length <= 1) return alert('Cannot delete the last project.');
-    if (confirm('Delete this project?')) {
+document.getElementById('btn-delete-project').addEventListener('click', async () => {
+    if (Object.keys(state.projects).length <= 1) {
+        return CustomUI.alert('Oops!', 'Cannot delete the last project.');
+    }
+    const ok = await CustomUI.confirm('Delete Project', 'Are you sure you want to delete this project?');
+    if (ok) {
         delete state.projects[state.activeProjectId];
         state.activeProjectId = Object.keys(state.projects)[0];
         scale = 1; currentTranslate = {x: 0, y: 0}; applyTransform();
@@ -411,32 +467,38 @@ function resetColorsRecursively(node) {
     }
 }
 
-document.getElementById('btn-reset-colors').addEventListener('click', () => {
-    if (confirm('Reset all node borders to default?')) {
+document.getElementById('btn-reset-colors').addEventListener('click', async () => {
+    const ok = await CustomUI.confirm('Reset Colors', 'Reset all node borders to default?');
+    if (ok) {
         const activeTree = state.projects[state.activeProjectId].tree;
-        resetColorsRecursively(activeTree); // Bersihkan border di semua node
-        
-        // Kembalikan warna default jika sempat terhapus, tanpa menghapus warna custom user
+        resetColorsRecursively(activeTree); 
         const essentialColors = ['default', '#bf616a', '#ebcb8b', '#a3be8c'];
         const userColors = state.customColors.filter(c => !essentialColors.includes(c));
-        
-        // Gabungkan: bawaan di depan, custom user di belakang
         state.customColors = [...essentialColors, ...userColors];
-        
-        saveData(); 
-        renderTree();
+        saveData(); renderTree();
     }
 });
 
 // --- TEXT TO DIAGRAM & EXPORT AS TEXT ---
 document.getElementById('btn-generate-text').addEventListener('click', () => {
     const text = document.getElementById('text-import').value;
-    if (!text.trim()) return;
+    if (!text.trim()) return CustomUI.alert('Empty Input', 'Please paste your text first.');
+
+    const lines = text.split('\n').filter(l => l.trim() !== '');
+    let isValidFormat = false;
+
+    lines.forEach(line => {
+        if (line.trim().match(/^([\d.]+)\s+(.*)$/)) isValidFormat = true;
+    });
+
+    if (!isValidFormat) {
+        return CustomUI.alert('Invalid Format', 'Format text tidak sesuai.\nGunakan penomoran, contoh:\n1 Vision\n1.1 Goal A');
+    }
 
     let newTree = { id: 'node_' + Date.now(), text: 'Root', children: [] };
     let nodeMap = {};
 
-    text.split('\n').filter(l => l.trim() !== '').forEach(line => {
+    lines.forEach(line => {
         const match = line.trim().match(/^([\d.]+)\s+(.*)$/);
         if (match) {
             let number = match[1];
@@ -473,12 +535,12 @@ document.getElementById('btn-export-text').addEventListener('click', () => {
     const activeTree = state.projects[state.activeProjectId].tree;
     updateNodeNumbering(activeTree); 
     const textData = extractTextFromTree(activeTree);
-    navigator.clipboard.writeText(textData.trim()).then(() => alert("Tree exported as text and copied to clipboard!"));
+    navigator.clipboard.writeText(textData.trim()).then(() => CustomUI.alert('Success', "Tree exported as text and copied to clipboard!"));
 });
 
 // --- EXPORT TO PNG (html2canvas) ---
 document.getElementById('btn-export-png').addEventListener('click', () => {
-    if (typeof html2canvas === 'undefined') return alert("Failed to load library. Ensure you have an internet connection to export PNG.");
+    if (typeof html2canvas === 'undefined') return CustomUI.alert('Offline', "Failed to load library. Ensure you have an internet connection to export PNG.");
     const treeElement = document.getElementById('tree-container');
     const oldScale = scale; const oldTranslate = currentTranslate;
     

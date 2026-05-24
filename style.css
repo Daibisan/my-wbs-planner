@@ -263,3 +263,7 @@ button.danger:hover { background-color: var(--danger); color: #fff; }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
 }
+
+/* Helper untuk UI Modal */
+#ui-modal-input:focus { border-color: var(--accent); }
+#ui-modal-input.hidden, #ui-modal-cancel.hidden { display: none; }

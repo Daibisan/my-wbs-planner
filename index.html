@@ -92,6 +92,19 @@
         </div>
     </div>
 
+    <!-- Custom UI Dialog Modal -->
+    <div id="ui-modal" class="modal-overlay hidden" style="z-index: 200;">
+        <div class="modal-card" style="text-align: center; max-width: 350px;">
+            <h3 id="ui-modal-title" style="color: var(--text-primary); margin-bottom: 8px;">Title</h3>
+            <p id="ui-modal-message" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Message</p>
+            <input type="text" id="ui-modal-input" style="width: 100%; margin-bottom: 16px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px; border-radius: var(--radius); outline: none;" class="hidden">
+            <div class="button-row">
+                <button id="ui-modal-cancel" class="hidden">Cancel</button>
+                <button id="ui-modal-confirm" class="primary">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CDN for html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="script.js"></script>
