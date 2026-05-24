@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WBS Visual Planner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Floating button to open sidebar -->
+        <button id="toggle-sidebar" class="btn-icon floating-toggle hidden" title="Open Sidebar">☰</button>
+
+        <!-- Sidebar Controls -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <h2>WBS Planner</h2>
+                <div class="brand-actions">
+                    <span id="save-indicator" class="saved">✓ Saved</span>
+                    <button id="btn-theme" class="btn-icon" title="Toggle Theme">☀️</button>
+                    <button id="close-sidebar" class="btn-icon" title="Close Sidebar">✕</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Project Workspace</label>
+                <select id="project-select"></select>
+                <div class="button-row">
+                    <button id="btn-new-project">New</button>
+                    <button id="btn-rename-project">Rename</button>
+                    <button id="btn-delete-project" class="danger">Delete</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Text to Diagram</label>
+                <p class="help-text">Paste format dengan penomoran (contoh: 1.1 Frontend):</p>
+                <textarea id="text-import" rows="6" placeholder="1 Vision&#10;1.1 Goal A&#10;1.1.1 Task A1&#10;1.2 Goal B"></textarea>
+                <button id="btn-generate-text" class="primary">Generate Diagram</button>
+            </div>
+
+            <div class="control-group">
+                <label>Export</label>
+                <button id="btn-export-text">Copy Text to Clipboard</button>
+                <button id="btn-export-png">Export PNG</button>
+            </div>
+
+            <div class="control-group">
+                <label>Node Actions</label>
+                <div id="color-palette" class="color-palette disabled">
+                    <!-- Palet warna akan dirender oleh JS -->
+                </div>
+                <input type="color" id="hidden-color-picker" style="display: none;">
+                <button id="btn-reset-colors">Reset All Colors</button>
+            </div>
+            
+            <div class="tips">
+                <strong>Tips:</strong>
+                <ul>
+                    <li>Gunakan tombol panah pada kotak untuk mengubah urutan & hierarki mudah.</li>
+                    <li>Klik & drag area kosong untuk menggeser.</li>
+                    <li>Scroll mouse untuk zoom in/out.</li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Canvas -->
+        <main class="canvas-area" id="canvas-wrapper">
+            <div id="tree-container" class="tree">
+                <!-- Tree will be rendered here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- CDN for html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
