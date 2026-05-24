@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,9 +34,18 @@
 
             <div class="control-group">
                 <label>Text to Diagram</label>
-                <p class="help-text">Paste format dengan penomoran (contoh: 1.1 Frontend):</p>
+                <p class="help-text">Paste numbered format (e.g., 1.1 Frontend):</p>
                 <textarea id="text-import" rows="6" placeholder="1 Vision&#10;1.1 Goal A&#10;1.1.1 Task A1&#10;1.2 Goal B"></textarea>
                 <button id="btn-generate-text" class="primary">Generate Diagram</button>
+            </div>
+
+            <div class="control-group">
+                <label>Node Actions</label>
+                <div id="color-palette" class="color-palette disabled">
+                    <!-- Palette rendered by JS -->
+                </div>
+                <input type="color" id="hidden-color-picker" style="display: none;">
+                <button id="btn-reset-colors">Reset All Colors</button>
             </div>
 
             <div class="control-group">
@@ -44,22 +53,13 @@
                 <button id="btn-export-text">Copy Text to Clipboard</button>
                 <button id="btn-export-png">Export PNG</button>
             </div>
-
-            <div class="control-group">
-                <label>Node Actions</label>
-                <div id="color-palette" class="color-palette disabled">
-                    <!-- Palet warna akan dirender oleh JS -->
-                </div>
-                <input type="color" id="hidden-color-picker" style="display: none;">
-                <button id="btn-reset-colors">Reset All Colors</button>
-            </div>
             
             <div class="tips">
                 <strong>Tips:</strong>
                 <ul>
-                    <li>Gunakan tombol panah pada kotak untuk mengubah urutan & hierarki mudah.</li>
-                    <li>Klik & drag area kosong untuk menggeser.</li>
-                    <li>Scroll mouse untuk zoom in/out.</li>
+                    <li>Use the arrow buttons on nodes to easily reorder & change hierarchy.</li>
+                    <li>Click & drag empty areas to pan.</li>
+                    <li>Scroll your mouse to zoom in/out.</li>
                 </ul>
             </div>
         </aside>

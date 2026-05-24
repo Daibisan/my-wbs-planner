@@ -12,13 +12,11 @@ function loadData() {
     const data = localStorage.getItem('wbs_planner_data');
     if (data) {
         state = JSON.parse(data);
-        // Hapus duplikat dari bug sebelumnya dan set default
         if (state.customColors) {
             state.customColors = [...new Set(state.customColors)];
         } else {
             state.customColors = ['default', '#bf616a', '#ebcb8b', '#a3be8c'];
         }
-        // Pastikan warna 'default' selalu ada di paling awal
         if (!state.customColors.includes('default')) {
             state.customColors.unshift('default');
         }
@@ -120,102 +118,18 @@ function generateNodeHTML(node) {
     return html;
 }
 
-function renderTree() {
+let originalRenderTree = function() {
     const activeProject = state.projects[state.activeProjectId];
     if (!activeProject) return;
     updateNodeNumbering(activeProject.tree);
     treeContainer.innerHTML = `<ul>${generateNodeHTML(activeProject.tree)}</ul>`;
     updateProjectSelect();
-}
-
-window.selectNode = (e, id) => {
-    state.selectedNodeId = id;
-    renderTree();
-    updateSidebarActions();
 };
 
-// Klik di luar node untuk deselect
-canvasWrapper.addEventListener('click', (e) => {
-    if (!e.target.closest('.node-card')) {
-        state.selectedNodeId = null;
-        renderTree();
-        updateSidebarActions();
-    }
-});
-
-function updateSidebarActions() {
-    const palette = document.getElementById('color-palette');
-    palette.innerHTML = '';
-    
-    if (!state.selectedNodeId) {
-        palette.classList.add('disabled');
-        palette.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">Pilih node pada diagram</span>';
-        return;
-    }
-    
-    palette.classList.remove('disabled');
-
-    // Render warna yang ada
-    state.customColors.forEach(color => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'swatch-wrapper';
-
-        const swatch = document.createElement('div');
-        swatch.className = 'color-swatch';
-        
-        if (color === 'default') {
-            swatch.classList.add('default-swatch');
-            swatch.title = "Warna Tema Default";
-        } else {
-            swatch.style.backgroundColor = color;
-            swatch.title = color;
-        }
-        
-        swatch.onclick = () => changeNodeColor(state.selectedNodeId, color);
-        wrapper.appendChild(swatch);
-
-        // Tambah tombol delete jika bukan warna default
-        if (color !== 'default') {
-            const delBtn = document.createElement('button');
-            delBtn.className = 'swatch-delete';
-            delBtn.innerHTML = '×';
-            delBtn.onclick = (e) => {
-                e.stopPropagation();
-                state.customColors = state.customColors.filter(c => c !== color);
-                updateSidebarActions();
-                saveData();
-            };
-            wrapper.appendChild(delBtn);
-        }
-
-        palette.appendChild(wrapper);
-    });
-
-    // Render tombol +
-    const addBtn = document.createElement('div');
-    addBtn.className = 'color-swatch add-btn';
-    addBtn.innerText = '+';
-    addBtn.onclick = () => document.getElementById('hidden-color-picker').click();
-    palette.appendChild(addBtn);
-}
-
-// Event saat warna baru dipilih via color picker
-document.getElementById('hidden-color-picker').addEventListener('change', (e) => {
-    const newColor = e.target.value;
-    if (!state.customColors.includes(newColor)) {
-        state.customColors.push(newColor); // Tambah ke deretan
-    }
-    changeNodeColor(state.selectedNodeId, newColor);
-    updateSidebarActions();
-    saveData();
-});
-
-// Update renderTree() agar mengupdate sidebar saat render
-const originalRenderTree = renderTree;
-renderTree = () => {
+function renderTree() {
     originalRenderTree();
     updateSidebarActions();
-};
+}
 
 // --- NODE OPERATIONS ---
 function findNodeAndParent(id, currentNode = state.projects[state.activeProjectId].tree, parent = null, index = 0) {
@@ -263,26 +177,11 @@ window.toggleCollapse = (id) => {
     }
 };
 
-window.changeNodeColor = (id, color) => {
-    const result = findNodeAndParent(id);
-    if (result) {
-        if (color === 'default') {
-            delete result.node.borderColor; // Hapus warna agar kembali ke warna default UI
-        } else {
-            result.node.borderColor = color;
-        }
-        saveData(); 
-        renderTree();
-    }
-};
-
 // --- POSITION / HIERARCHY MOVEMENT ---
-
 window.moveNodeUp = (id) => {
     const result = findNodeAndParent(id);
     if (result && result.parent && result.index > 0) {
         const parentChildren = result.parent.children;
-        // Swap with sibling above
         [parentChildren[result.index], parentChildren[result.index - 1]] = [parentChildren[result.index - 1], parentChildren[result.index]];
         saveData(); renderTree();
     }
@@ -293,7 +192,6 @@ window.moveNodeDown = (id) => {
     if (result && result.parent) {
         const parentChildren = result.parent.children;
         if (result.index < parentChildren.length - 1) {
-            // Swap with sibling below
             [parentChildren[result.index], parentChildren[result.index + 1]] = [parentChildren[result.index + 1], parentChildren[result.index]];
             saveData(); renderTree();
         }
@@ -302,19 +200,15 @@ window.moveNodeDown = (id) => {
 
 window.indentNode = (id) => {
     const result = findNodeAndParent(id);
-    // Cannot indent root or the first child
     if (result && result.parent && result.index > 0) {
         const parentChildren = result.parent.children;
         const previousSibling = parentChildren[result.index - 1];
         const nodeToMove = result.node;
 
-        // Remove from current parent
         parentChildren.splice(result.index, 1);
-        
-        // Add as child to previous sibling
         if (!previousSibling.children) previousSibling.children = [];
         previousSibling.children.push(nodeToMove);
-        previousSibling.collapsed = false; // Auto expand to show new child
+        previousSibling.collapsed = false; 
 
         saveData(); renderTree();
     }
@@ -322,19 +216,14 @@ window.indentNode = (id) => {
 
 window.outdentNode = (id) => {
     const result = findNodeAndParent(id);
-    // Find parent of parent (grandparent)
     if (result && result.parent && result.parent.number !== undefined) {
         const grandparentResult = findNodeAndParent(result.parent.id);
-        
         if (grandparentResult) {
             const nodeToMove = result.node;
             const currentParentChildren = result.parent.children;
             
-            // Remove from current parent
             currentParentChildren.splice(result.index, 1);
-            
-            // Add as sibling *after* the former parent in the grandparent's children array
-            constFormerParentIndex = grandparentResult.index;
+            const constFormerParentIndex = grandparentResult.index;
             grandparentResult.parent.children.splice(constFormerParentIndex + 1, 0, nodeToMove);
             
             saveData(); renderTree();
@@ -409,6 +298,113 @@ document.getElementById('btn-delete-project').addEventListener('click', () => {
     }
 });
 
+// --- NODE SELECTION & COLOR PALETTE ---
+window.selectNode = (e, id) => {
+    state.selectedNodeId = id;
+    renderTree();
+};
+
+canvasWrapper.addEventListener('click', (e) => {
+    if (!e.target.closest('.node-card')) {
+        state.selectedNodeId = null;
+        renderTree();
+    }
+});
+
+function updateSidebarActions() {
+    const palette = document.getElementById('color-palette');
+    palette.innerHTML = '';
+    
+    if (!state.selectedNodeId) {
+        palette.classList.add('disabled');
+        palette.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">Select a node on the diagram</span>';
+        return;
+    }
+    
+    palette.classList.remove('disabled');
+
+    state.customColors.forEach(color => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'swatch-wrapper';
+
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        
+        if (color === 'default') {
+            swatch.classList.add('default-swatch');
+            swatch.title = "Default Theme Color";
+        } else {
+            swatch.style.backgroundColor = color;
+            swatch.title = color;
+        }
+        
+        swatch.onclick = () => changeNodeColor(state.selectedNodeId, color);
+        wrapper.appendChild(swatch);
+
+        if (color !== 'default') {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'swatch-delete';
+            delBtn.innerHTML = '×';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                state.customColors = state.customColors.filter(c => c !== color);
+                updateSidebarActions();
+                saveData();
+            };
+            wrapper.appendChild(delBtn);
+        }
+
+        palette.appendChild(wrapper);
+    });
+
+    const addBtn = document.createElement('div');
+    addBtn.className = 'color-swatch add-btn';
+    addBtn.innerText = '+';
+    addBtn.onclick = () => document.getElementById('hidden-color-picker').click();
+    palette.appendChild(addBtn);
+}
+
+document.getElementById('hidden-color-picker').addEventListener('change', (e) => {
+    const newColor = e.target.value;
+    if (!state.customColors.includes(newColor)) {
+        state.customColors.push(newColor);
+    }
+    changeNodeColor(state.selectedNodeId, newColor);
+    updateSidebarActions();
+    saveData();
+});
+
+window.changeNodeColor = (id, color) => {
+    const result = findNodeAndParent(id);
+    if (result) {
+        if (color === 'default') {
+            delete result.node.borderColor; 
+        } else {
+            result.node.borderColor = color;
+        }
+        saveData(); 
+        renderTree();
+    }
+};
+
+function resetColorsRecursively(node) {
+    if (node.borderColor) {
+        delete node.borderColor;
+    }
+    if (node.children && node.children.length > 0) {
+        node.children.forEach(child => resetColorsRecursively(child));
+    }
+}
+
+document.getElementById('btn-reset-colors').addEventListener('click', () => {
+    if (confirm('Reset all border colors to default?')) {
+        const activeTree = state.projects[state.activeProjectId].tree;
+        resetColorsRecursively(activeTree);
+        saveData(); 
+        renderTree();
+    }
+});
+
 // --- TEXT TO DIAGRAM & EXPORT AS TEXT ---
 document.getElementById('btn-generate-text').addEventListener('click', () => {
     const text = document.getElementById('text-import').value;
@@ -452,21 +448,19 @@ function extractTextFromTree(node) {
 
 document.getElementById('btn-export-text').addEventListener('click', () => {
     const activeTree = state.projects[state.activeProjectId].tree;
-    updateNodeNumbering(activeTree); // Ensure numbering is fresh
+    updateNodeNumbering(activeTree); 
     const textData = extractTextFromTree(activeTree);
     navigator.clipboard.writeText(textData.trim()).then(() => alert("Tree exported as text and copied to clipboard!"));
 });
 
-// --- EXPORT TO PNG (html2canvas with Offline Check) ---
+// --- EXPORT TO PNG (html2canvas) ---
 document.getElementById('btn-export-png').addEventListener('click', () => {
-    if (typeof html2canvas === 'undefined') return alert("Gagal memuat library. Pastikan ada koneksi internet untuk export PNG.");
+    if (typeof html2canvas === 'undefined') return alert("Failed to load library. Ensure you have an internet connection to export PNG.");
     const treeElement = document.getElementById('tree-container');
     const oldScale = scale; const oldTranslate = currentTranslate;
     
     // Reset for screenshot
     scale = 1; currentTranslate = {x: 0, y: 0}; applyTransform();
-
-    // Re-ensure numbers are updated
     updateNodeNumbering(state.projects[state.activeProjectId].tree);
 
     const bgColor = isLightMode ? '#f5f7fa' : '#121212';
@@ -476,7 +470,6 @@ document.getElementById('btn-export-png').addEventListener('click', () => {
         ignoreElements: (element) => 
             element.classList.contains('node-controls') || 
             element.classList.contains('position-controls') || 
-            element.classList.contains('color-picker-container') ||
             element.classList.contains('collapse')
     }).then(canvas => {
         const link = document.createElement('a');
@@ -487,25 +480,6 @@ document.getElementById('btn-export-png').addEventListener('click', () => {
         // Restore
         scale = oldScale; currentTranslate = oldTranslate; applyTransform();
     });
-});
-
-// --- RESET SEMUA WARNA BORDER ---
-function resetColorsRecursively(node) {
-    if (node.borderColor) {
-        delete node.borderColor;
-    }
-    if (node.children && node.children.length > 0) {
-        node.children.forEach(child => resetColorsRecursively(child));
-    }
-}
-
-document.getElementById('btn-reset-colors').addEventListener('click', () => {
-    if (confirm('Reset semua warna border ke default?')) {
-        const activeTree = state.projects[state.activeProjectId].tree;
-        resetColorsRecursively(activeTree);
-        saveData(); 
-        renderTree();
-    }
 });
 
 window.onload = () => { loadData(); renderTree(); };
