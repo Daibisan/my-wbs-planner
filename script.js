@@ -323,6 +323,10 @@ function updateSidebarActions() {
     
     palette.classList.remove('disabled');
 
+    // Cek warna node yang sedang dipilih
+    const activeNodeData = findNodeAndParent(state.selectedNodeId);
+    const currentNodeColor = (activeNodeData && activeNodeData.node.borderColor) ? activeNodeData.node.borderColor : 'default';
+
     state.customColors.forEach(color => {
         const wrapper = document.createElement('div');
         wrapper.className = 'swatch-wrapper';
@@ -337,6 +341,11 @@ function updateSidebarActions() {
             swatch.style.backgroundColor = color;
             swatch.title = color;
         }
+
+        // Beri highlight jika ini adalah warna yang sedang dipakai oleh node
+        if (color === currentNodeColor) {
+            swatch.classList.add('active-color');
+        }
         
         swatch.onclick = () => changeNodeColor(state.selectedNodeId, color);
         wrapper.appendChild(swatch);
@@ -348,8 +357,14 @@ function updateSidebarActions() {
             delBtn.onclick = (e) => {
                 e.stopPropagation();
                 state.customColors = state.customColors.filter(c => c !== color);
-                updateSidebarActions();
-                saveData();
+                
+                // Jika warna yang dihapus sedang dipakai, reset node ke default
+                if (color === currentNodeColor) {
+                    changeNodeColor(state.selectedNodeId, 'default');
+                } else {
+                    updateSidebarActions();
+                    saveData();
+                }
             };
             wrapper.appendChild(delBtn);
         }
@@ -397,9 +412,17 @@ function resetColorsRecursively(node) {
 }
 
 document.getElementById('btn-reset-colors').addEventListener('click', () => {
-    if (confirm('Reset all border colors to default?')) {
+    if (confirm('Reset all node borders to default?')) {
         const activeTree = state.projects[state.activeProjectId].tree;
-        resetColorsRecursively(activeTree);
+        resetColorsRecursively(activeTree); // Bersihkan border di semua node
+        
+        // Kembalikan warna default jika sempat terhapus, tanpa menghapus warna custom user
+        const essentialColors = ['default', '#bf616a', '#ebcb8b', '#a3be8c'];
+        const userColors = state.customColors.filter(c => !essentialColors.includes(c));
+        
+        // Gabungkan: bawaan di depan, custom user di belakang
+        state.customColors = [...essentialColors, ...userColors];
+        
         saveData(); 
         renderTree();
     }
@@ -480,6 +503,19 @@ document.getElementById('btn-export-png').addEventListener('click', () => {
         // Restore
         scale = oldScale; currentTranslate = oldTranslate; applyTransform();
     });
+});
+
+// --- ABOUT MODAL ---
+const aboutModal = document.getElementById('about-modal');
+const btnAbout = document.getElementById('btn-about');
+const closeModal = document.getElementById('close-modal');
+
+btnAbout.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+closeModal.addEventListener('click', () => aboutModal.classList.add('hidden'));
+
+// Tutup modal jika user klik area gelap di luar kotak modal
+aboutModal.addEventListener('click', (e) => {
+    if (e.target === aboutModal) aboutModal.classList.add('hidden');
 });
 
 window.onload = () => { loadData(); renderTree(); };

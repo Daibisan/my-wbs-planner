@@ -62,6 +62,10 @@
                     <li>Scroll your mouse to zoom in/out.</li>
                 </ul>
             </div>
+
+            <div class="sidebar-footer">
+                <button id="btn-about" class="btn-text">About & Help</button>
+            </div>
         </aside>
 
         <!-- Main Canvas -->
@@ -70,6 +74,22 @@
                 <!-- Tree will be rendered here -->
             </div>
         </main>
+    </div>
+
+    <div id="about-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button id="close-modal" class="btn-icon close-modal">✕</button>
+            <h3>About WBS Planner</h3>
+            <p>A minimal, hierarchical visual planner designed for deep thinking and project breakdown.</p>
+            <ul>
+                <li><strong>Reorder:</strong> Use arrow buttons on nodes to change hierarchy easily.</li>
+                <li><strong>Colors:</strong> Categorize tasks by selecting a node and picking a color.</li>
+                <li><strong>Generate:</strong> Paste numbered lists (e.g. 1.1) to auto-generate a tree.</li>
+            </ul>
+            <div class="modal-footer">
+                <span>Created by <a href="https://github.com/Daibisan" target="_blank">Daibi</a></span>
+            </div>
+        </div>
     </div>
 
     <!-- CDN for html2canvas -->
