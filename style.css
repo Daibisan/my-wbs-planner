@@ -239,3 +239,27 @@ button.danger:hover { background-color: var(--danger); color: #fff; }
 .modal-footer { border-top: 1px solid var(--border-color); padding-top: 16px; font-size: 0.85rem; text-align: center; }
 .modal-footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
 .modal-footer a:hover { text-decoration: underline; }
+
+/* Custom Scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
