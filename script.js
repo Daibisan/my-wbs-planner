@@ -24,7 +24,11 @@ const CustomUI = {
             }
 
             modal.classList.remove('hidden');
-            if (type === 'prompt') input.focus();
+            
+            if (type === 'prompt') {
+                input.focus();
+                input.select(); // Highlight all text automatically
+            }
 
             // Cleanup function to remove event listeners
             const cleanup = () => {
@@ -479,7 +483,7 @@ function updateSidebarActions() {
     const activeNodeData = findNodeAndParent(state.selectedNodeId);
     const currentNodeColor = (activeNodeData && activeNodeData.node.borderColor) ? activeNodeData.node.borderColor : 'default';
 
-    state.customColors.forEach(color => {
+    state.customColors.forEach((color, index) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'swatch-wrapper';
 
@@ -502,7 +506,8 @@ function updateSidebarActions() {
         swatch.onclick = () => changeNodeColor(state.selectedNodeId, color);
         wrapper.appendChild(swatch);
 
-        if (color !== 'default') {
+        // Index 0 adalah 'default', 1-3 adalah 3 warna bawaan. Hanya tampilkan tombol hapus jika index > 3
+        if (index > 3) {
             const delBtn = document.createElement('button');
             delBtn.className = 'swatch-delete';
             delBtn.innerHTML = '×';
