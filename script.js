@@ -108,14 +108,30 @@ const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('toggle-sidebar');
 const closeBtn = document.getElementById('close-sidebar');
 
-closeBtn.addEventListener('click', () => {
+function closeSidebar() {
     sidebar.classList.add('collapsed');
     toggleBtn.classList.remove('hidden');
-});
+}
 
-toggleBtn.addEventListener('click', () => {
+function openSidebar() {
     sidebar.classList.remove('collapsed');
     toggleBtn.classList.add('hidden');
+}
+
+closeBtn.addEventListener('click', closeSidebar);
+toggleBtn.addEventListener('click', openSidebar);
+
+// Close sidebar when clicking outside on mobile devices
+document.addEventListener('pointerdown', (e) => {
+    const isMobile = window.innerWidth <= 768;
+    const isSidebarOpen = !sidebar.classList.contains('collapsed');
+    const isClickOutsideSidebar = !sidebar.contains(e.target);
+    const isClickOutsideToggleBtn = !toggleBtn.contains(e.target);
+
+    // If on mobile, sidebar is open, and user clicks outside sidebar & toggle button
+    if (isMobile && isSidebarOpen && isClickOutsideSidebar && isClickOutsideToggleBtn) {
+        closeSidebar();
+    }
 });
 
 // --- RENDER LOGIC ---
