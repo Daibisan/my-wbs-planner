@@ -152,9 +152,10 @@ function generateNodeHTML(node) {
             ` : ''}
 
             <div class="node-number">${node.number}</div>
-            <div class="node-text" contenteditable="true" onclick="event.stopPropagation(); selectNode(event, '${node.id}')" onblur="updateNodeText('${node.id}', this.innerText)">${node.text}</div>
+            <div class="node-text" onclick="event.stopPropagation(); selectNode(event, '${node.id}')">${node.text}</div>
             
             <div class="node-controls">
+                <button class="btn-icon" onclick="event.stopPropagation(); editNodeText('${node.id}')" title="Edit Text">✏️</button>
                 <button class="btn-icon" onclick="event.stopPropagation(); addChild('${node.id}')" title="Add Child">+</button>
                 ${!isRoot ? `<button class="btn-icon delete" onclick="event.stopPropagation(); deleteNode('${node.id}')" title="Delete Node">-</button>` : ''}
             </div>
@@ -214,6 +215,18 @@ window.updateNodeText = (id, newText) => {
     if (result && result.node.text !== newText) {
         result.node.text = newText.trim() === '' ? 'Empty' : newText.trim();
         saveData();
+    }
+};
+
+window.editNodeText = async (id) => {
+    const result = findNodeAndParent(id);
+    if (result) {
+        const newText = await CustomUI.prompt('Edit Node', 'Enter new text:', result.node.text);
+        if (newText !== null && newText.trim() !== '') {
+            result.node.text = newText.trim();
+            saveData();
+            renderTree();
+        }
     }
 };
 
