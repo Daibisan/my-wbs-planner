@@ -26,10 +26,12 @@ const CustomUI = {
             modal.classList.remove('hidden');
             if (type === 'prompt') input.focus();
 
+            // Cleanup function to remove event listeners
             const cleanup = () => {
                 modal.classList.add('hidden');
                 btnConfirm.onclick = null;
                 btnCancel.onclick = null;
+                input.onkeydown = null; 
             };
 
             btnConfirm.onclick = () => {
@@ -41,6 +43,16 @@ const CustomUI = {
                 cleanup();
                 resolve(type === 'prompt' ? null : false);
             };
+
+            // Trigger confirm when Enter key is pressed in the input field
+            if (type === 'prompt') {
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); 
+                        btnConfirm.click();
+                    }
+                };
+            }
         });
     },
     alert: (title, message) => CustomUI.show('alert', title, message),
