@@ -299,8 +299,19 @@ window.addEventListener('mouseup', () => { isPanning = false; });
 canvasWrapper.addEventListener('mouseleave', () => { isPanning = false; });
 canvasWrapper.addEventListener('wheel', (e) => {
     e.preventDefault();
+    const oldScale = scale;
     scale += e.deltaY < 0 ? 0.1 : -0.1;
     scale = Math.min(Math.max(0.3, scale), 3);
+
+    // Dapatkan posisi kursor relatif terhadap area canvas
+    const rect = canvasWrapper.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Geser koordinat translate agar posisi di bawah kursor tetap diam
+    currentTranslate.x = mouseX - ((mouseX - currentTranslate.x) * (scale / oldScale));
+    currentTranslate.y = mouseY - ((mouseY - currentTranslate.y) * (scale / oldScale));
+
     applyTransform();
 }, { passive: false });
 
@@ -325,7 +336,19 @@ canvasWrapper.addEventListener('touchmove', (e) => {
         const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         const pinchRatio = currentDistance / initialPinchDistance;
         const scaleModifier = pinchRatio > 1 ? 0.05 : -0.05;
+        
+        const oldScale = scale;
         scale = Math.min(Math.max(0.3, scale + scaleModifier), 3);
+        
+        // Cari titik tengah antara 2 jari
+        const rect = canvasWrapper.getBoundingClientRect();
+        const pinchX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+        const pinchY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+        // Geser koordinat agar zoom fokus ke titik tengah jari
+        currentTranslate.x = pinchX - ((pinchX - currentTranslate.x) * (scale / oldScale));
+        currentTranslate.y = pinchY - ((pinchY - currentTranslate.y) * (scale / oldScale));
+
         initialPinchDistance = currentDistance; 
         applyTransform();
     }

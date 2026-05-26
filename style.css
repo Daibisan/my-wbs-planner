@@ -296,3 +296,7 @@ button.danger:hover { background-color: var(--danger); color: #fff; }
     /* Sembunyikan kontrol bawaan hover di mobile, biarkan aktif lewat .selected */
     .node-controls, .position-controls, .collapse { opacity: 0; pointer-events: none; }
 }
+
+#tree-container { 
+    transform-origin: 0 0; 
+}
