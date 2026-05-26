@@ -279,11 +279,13 @@ window.outdentNode = (id) => {
     }
 };
 
-// --- PAN AND ZOOM ---
+// --- PAN AND ZOOM (MOUSE & TOUCH) ---
 let scale = 1; let isPanning = false; let startPoint = { x: 0, y: 0 }; let currentTranslate = { x: 0, y: 0 };
+let initialPinchDistance = null;
 
 function applyTransform() { treeContainer.style.transform = `translate(${currentTranslate.x}px, ${currentTranslate.y}px) scale(${scale})`; }
 
+// MOUSE EVENTS
 canvasWrapper.addEventListener('mousedown', (e) => {
     if (e.target.closest('.node-card')) return;
     isPanning = true; startPoint = { x: e.clientX - currentTranslate.x, y: e.clientY - currentTranslate.y };
@@ -295,13 +297,41 @@ window.addEventListener('mousemove', (e) => {
 });
 window.addEventListener('mouseup', () => { isPanning = false; });
 canvasWrapper.addEventListener('mouseleave', () => { isPanning = false; });
-
 canvasWrapper.addEventListener('wheel', (e) => {
     e.preventDefault();
     scale += e.deltaY < 0 ? 0.1 : -0.1;
     scale = Math.min(Math.max(0.3, scale), 3);
     applyTransform();
 }, { passive: false });
+
+// TOUCH EVENTS (MOBILE)
+canvasWrapper.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+        if (e.target.closest('.node-card')) return;
+        isPanning = true;
+        startPoint = { x: e.touches[0].clientX - currentTranslate.x, y: e.touches[0].clientY - currentTranslate.y };
+    } else if (e.touches.length === 2) {
+        isPanning = false;
+        initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+}, { passive: false });
+
+canvasWrapper.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && isPanning) {
+        currentTranslate = { x: e.touches[0].clientX - startPoint.x, y: e.touches[0].clientY - startPoint.y };
+        applyTransform();
+    } else if (e.touches.length === 2 && initialPinchDistance) {
+        e.preventDefault(); 
+        const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const pinchRatio = currentDistance / initialPinchDistance;
+        const scaleModifier = pinchRatio > 1 ? 0.05 : -0.05;
+        scale = Math.min(Math.max(0.3, scale + scaleModifier), 3);
+        initialPinchDistance = currentDistance; 
+        applyTransform();
+    }
+}, { passive: false });
+
+canvasWrapper.addEventListener('touchend', () => { isPanning = false; initialPinchDistance = null; });
 
 // --- PROJECT MANAGEMENT ---
 function updateProjectSelect() {
