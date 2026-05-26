@@ -334,11 +334,13 @@ canvasWrapper.addEventListener('touchmove', (e) => {
     } else if (e.touches.length === 2 && initialPinchDistance) {
         e.preventDefault(); 
         const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        const pinchRatio = currentDistance / initialPinchDistance;
-        const scaleModifier = pinchRatio > 1 ? 0.05 : -0.05;
         
+        // Rasio pergerakan jari (jauh lebih halus dari angka fix)
+        const pinchRatio = currentDistance / initialPinchDistance;
         const oldScale = scale;
-        scale = Math.min(Math.max(0.3, scale + scaleModifier), 3);
+        
+        // Kalikan scale lama dengan rasio jari
+        scale = Math.min(Math.max(0.3, oldScale * pinchRatio), 3);
         
         // Cari titik tengah antara 2 jari
         const rect = canvasWrapper.getBoundingClientRect();
