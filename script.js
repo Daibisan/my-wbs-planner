@@ -682,3 +682,66 @@ aboutModal.addEventListener('click', (e) => {
 });
 
 window.onload = () => { loadData(); renderTree(); };
+
+// --- EXPORT & IMPORT JSON ---
+
+// Export current active project to JSON file
+document.getElementById('btn-export-json').addEventListener('click', () => {
+    const activeProject = state.projects[state.activeProjectId];
+    const dataStr = JSON.stringify(activeProject, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `WBS_${activeProject.name.replace(/\s+/g, '_')}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+});
+
+// Trigger file input when Import JSON button is clicked
+document.getElementById('btn-import-json').addEventListener('click', () => {
+    document.getElementById('file-import-json').click();
+});
+
+// Handle file selection and parse JSON data with duplicate checking
+document.getElementById('file-import-json').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const importedProject = JSON.parse(event.target.result);
+            if (!importedProject.id || !importedProject.tree || !importedProject.name) throw new Error("Invalid format");
+            
+            // Check if project exists (by ID OR Name)
+            const existingProject = state.projects[importedProject.id] || Object.values(state.projects).find(p => p.name === importedProject.name);
+            
+            if (existingProject) {
+                const isSameTree = JSON.stringify(existingProject.tree) === JSON.stringify(importedProject.tree);
+                if (isSameTree) {
+                    CustomUI.alert('Duplicate Found', 'You already have this exact project!');
+                    e.target.value = ''; return; 
+                } else {
+                    importedProject.id = existingProject.id; 
+                    state.projects[existingProject.id] = importedProject;
+                    CustomUI.alert('Project Updated', 'Existing project updated with the new data!');
+                }
+            } else {
+                // Import as new project
+                state.projects[importedProject.id] = importedProject;
+                CustomUI.alert('Import Success', 'New project successfully imported!');
+            }
+            
+            state.activeProjectId = importedProject.id;
+            saveData(); updateProjectSelect();
+            scale = 1; currentTranslate = {x: 0, y: 0}; applyTransform(); renderTree();
+        } catch (error) {
+            CustomUI.alert('Error', 'Invalid JSON format.');
+        }
+        e.target.value = ''; 
+    };
+    reader.readAsText(file);
+});

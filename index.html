@@ -49,9 +49,18 @@
             </div>
 
             <div class="control-group">
+                <label>Import Project</label>
+                <div class="button-row">
+                    <button id="btn-import-json" title="Import from JSON file">Import JSON</button>
+                </div>
+                <input type="file" id="file-import-json" accept=".json" class="hidden" style="display: none;">
+            </div>
+
+            <div class="control-group">
                 <label>Export</label>
                 <button id="btn-export-text">Copy Text to Clipboard</button>
                 <button id="btn-export-png">Export PNG</button>
+                <button id="btn-export-json" title="Export as JSON file">Export JSON</button>
             </div>
             
             <div class="tips">
