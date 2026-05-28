@@ -190,6 +190,7 @@ function generateNodeHTML(node) {
                 <button class="btn-icon" onclick="event.stopPropagation(); editNodeText('${node.id}')" title="Edit Text">✏️</button>
                 <button class="btn-icon" onclick="event.stopPropagation(); addChild('${node.id}')" title="Add Child">+</button>
                 ${!isRoot ? `<button class="btn-icon delete" onclick="event.stopPropagation(); deleteNode('${node.id}')" title="Delete Node">-</button>` : ''}
+                ${!isRoot ? `<button class="btn-icon" onclick="event.stopPropagation(); duplicateNode('${node.id}')" title="Duplicate Node">📋</button>` : ''}
             </div>
         </div>`;
     if (node.children && node.children.length > 0 && !node.collapsed) {
@@ -267,6 +268,30 @@ window.toggleCollapse = (id) => {
     if (result) {
         result.node.collapsed = !result.node.collapsed;
         saveData(); renderTree();
+    }
+};
+
+window.duplicateNode = (id) => {
+    const result = findNodeAndParent(id);
+    // Root node cannot be duplicated, so ensure it has a parent
+    if (result && result.parent) {
+        // Deep copy the node
+        const clonedNode = JSON.parse(JSON.stringify(result.node));
+        
+        // Recursively generate new IDs for the clone and its children
+        const regenerateIds = (node) => {
+            node.id = 'node_' + Math.random().toString(36).substr(2, 9);
+            if (node.children) node.children.forEach(regenerateIds);
+        };
+        regenerateIds(clonedNode);
+        
+        // Insert the cloned node right after the original one
+        result.parent.children.splice(result.index + 1, 0, clonedNode);
+        
+        saveData(); 
+        renderTree();
+    } else if (result && !result.parent) {
+        CustomUI.alert('Error', 'Cannot duplicate the root node.');
     }
 };
 
