@@ -309,3 +309,26 @@ button.danger:hover { background-color: var(--danger); color: #fff; }
 #tree-container { 
     transform-origin: 0 0; 
 }
+
+/* Floating History Controls (Top-Right Corner) */
+.floating-history-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 40; /* Above the canvas area */
+}
+
+#btn-undo:disabled, #btn-redo:disabled { 
+    opacity: 0.3; 
+    cursor: not-allowed; 
+}
+
+/* --- MOBILE RESPONSIVE ADAPTATION --- */
+@media (max-width: 768px) {
+    .floating-history-controls {
+        top: 15px;
+        right: 15px;
+    }
+}

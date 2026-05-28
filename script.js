@@ -104,6 +104,53 @@ function showSaveIndicator() {
     setTimeout(() => ind.classList.remove('show'), 2000);
 }
 
+// --- UNDO & REDO ---
+let undoStack = [];
+let redoStack = [];
+const MAX_HISTORY = 50;
+
+function recordHistory() {
+    undoStack.push(JSON.stringify(state));
+    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+    redoStack = []; 
+    updateUndoRedoButtons();
+}
+
+window.undo = () => {
+    if (undoStack.length === 0) return;
+    redoStack.push(JSON.stringify(state));
+    state = JSON.parse(undoStack.pop());
+    saveData(); updateProjectSelect(); renderTree(); updateUndoRedoButtons();
+};
+
+window.redo = () => {
+    if (redoStack.length === 0) return;
+    undoStack.push(JSON.stringify(state));
+    state = JSON.parse(redoStack.pop());
+    saveData(); updateProjectSelect(); renderTree(); updateUndoRedoButtons();
+};
+
+function updateUndoRedoButtons() {
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+    if (btnUndo) btnUndo.disabled = undoStack.length === 0;
+    if (btnRedo) btnRedo.disabled = redoStack.length === 0;
+}
+
+// Keyboard Shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); undo();
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault(); redo();
+    }
+});
+
+// Event Listeners for UI Buttons
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-redo').addEventListener('click', redo);
+
 // --- UI CONTROLS (THEME & SIDEBAR) ---
 const themeBtn = document.getElementById('btn-theme');
 let isLightMode = localStorage.getItem('wbs_theme') === 'light';
@@ -228,6 +275,7 @@ function findNodeAndParent(id, currentNode = state.projects[state.activeProjectI
 window.addChild = (parentId) => {
     const result = findNodeAndParent(parentId);
     if (result) {
+        recordHistory(); // Record before mutating
         if(!result.node.children) result.node.children = [];
         result.node.children.push({ id: 'node_' + Date.now(), text: 'New Task', collapsed: false, children: [] });
         result.node.collapsed = false;
@@ -238,16 +286,9 @@ window.addChild = (parentId) => {
 window.deleteNode = (id) => {
     const result = findNodeAndParent(id);
     if (result && result.parent) {
+        recordHistory();
         result.parent.children.splice(result.index, 1);
         saveData(); renderTree();
-    }
-};
-
-window.updateNodeText = (id, newText) => {
-    const result = findNodeAndParent(id);
-    if (result && result.node.text !== newText) {
-        result.node.text = newText.trim() === '' ? 'Empty' : newText.trim();
-        saveData();
     }
 };
 
@@ -255,7 +296,8 @@ window.editNodeText = async (id) => {
     const result = findNodeAndParent(id);
     if (result) {
         const newText = await CustomUI.prompt('Edit Node', 'Enter new text:', result.node.text);
-        if (newText !== null && newText.trim() !== '') {
+        if (newText !== null && newText.trim() !== '' && newText.trim() !== result.node.text) {
+            recordHistory();
             result.node.text = newText.trim();
             saveData();
             renderTree();
@@ -263,35 +305,29 @@ window.editNodeText = async (id) => {
     }
 };
 
-window.toggleCollapse = (id) => {
-    const result = findNodeAndParent(id);
-    if (result) {
-        result.node.collapsed = !result.node.collapsed;
-        saveData(); renderTree();
-    }
-};
-
 window.duplicateNode = (id) => {
     const result = findNodeAndParent(id);
-    // Root node cannot be duplicated, so ensure it has a parent
     if (result && result.parent) {
-        // Deep copy the node
+        recordHistory();
         const clonedNode = JSON.parse(JSON.stringify(result.node));
-        
-        // Recursively generate new IDs for the clone and its children
         const regenerateIds = (node) => {
             node.id = 'node_' + Math.random().toString(36).substr(2, 9);
             if (node.children) node.children.forEach(regenerateIds);
         };
         regenerateIds(clonedNode);
-        
-        // Insert the cloned node right after the original one
         result.parent.children.splice(result.index + 1, 0, clonedNode);
-        
-        saveData(); 
-        renderTree();
+        saveData(); renderTree();
     } else if (result && !result.parent) {
         CustomUI.alert('Error', 'Cannot duplicate the root node.');
+    }
+};
+
+window.toggleCollapse = (id) => {
+    const result = findNodeAndParent(id);
+    if (result) {
+        recordHistory();
+        result.node.collapsed = !result.node.collapsed;
+        saveData(); renderTree();
     }
 };
 
@@ -299,6 +335,7 @@ window.duplicateNode = (id) => {
 window.moveNodeUp = (id) => {
     const result = findNodeAndParent(id);
     if (result && result.parent && result.index > 0) {
+        recordHistory();
         const parentChildren = result.parent.children;
         [parentChildren[result.index], parentChildren[result.index - 1]] = [parentChildren[result.index - 1], parentChildren[result.index]];
         saveData(); renderTree();
@@ -310,6 +347,7 @@ window.moveNodeDown = (id) => {
     if (result && result.parent) {
         const parentChildren = result.parent.children;
         if (result.index < parentChildren.length - 1) {
+            recordHistory();
             [parentChildren[result.index], parentChildren[result.index + 1]] = [parentChildren[result.index + 1], parentChildren[result.index]];
             saveData(); renderTree();
         }
@@ -319,6 +357,7 @@ window.moveNodeDown = (id) => {
 window.indentNode = (id) => {
     const result = findNodeAndParent(id);
     if (result && result.parent && result.index > 0) {
+        recordHistory();
         const parentChildren = result.parent.children;
         const previousSibling = parentChildren[result.index - 1];
         const nodeToMove = result.node;
@@ -337,6 +376,7 @@ window.outdentNode = (id) => {
     if (result && result.parent && result.parent.number !== undefined) {
         const grandparentResult = findNodeAndParent(result.parent.id);
         if (grandparentResult) {
+            recordHistory();
             const nodeToMove = result.node;
             const currentParentChildren = result.parent.children;
             
@@ -574,6 +614,7 @@ document.getElementById('hidden-color-picker').addEventListener('change', (e) =>
 window.changeNodeColor = (id, color) => {
     const result = findNodeAndParent(id);
     if (result) {
+        recordHistory();
         if (color === 'default') {
             delete result.node.borderColor; 
         } else {
@@ -596,6 +637,7 @@ function resetColorsRecursively(node) {
 document.getElementById('btn-reset-colors').addEventListener('click', async () => {
     const ok = await CustomUI.confirm('Reset Colors', 'Reset all node borders to default?');
     if (ok) {
+        recordHistory();
         const activeTree = state.projects[state.activeProjectId].tree;
         resetColorsRecursively(activeTree); 
         const essentialColors = ['default', '#bf616a', '#ebcb8b', '#a3be8c'];
