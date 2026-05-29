@@ -215,10 +215,11 @@ function generateNodeHTML(node) {
     const isRoot = node.number === '1';
     const borderStyle = node.borderColor ? `style="border-color: ${node.borderColor}; border-width: 2px;"` : '';
     const isSelected = state.selectedNodeId === node.id ? 'selected' : '';
+    const isCollapsed = (node.collapsed && node.children && node.children.length > 0) ? 'is-collapsed' : '';
 
     let html = `
     <li>
-        <div class="node-card ${isSelected}" data-id="${node.id}" ${borderStyle} onclick="selectNode(event, '${node.id}')">
+        <div class="node-card ${isSelected} ${isCollapsed}" data-id="${node.id}" ${borderStyle} onclick="selectNode(event, '${node.id}')">
             ${!isRoot && node.children && node.children.length > 0 ? `<button class="btn-icon collapse" onclick="event.stopPropagation(); toggleCollapse('${node.id}')">${node.collapsed ? '↓' : '↑'}</button>` : ''}
             
             ${!isRoot ? `

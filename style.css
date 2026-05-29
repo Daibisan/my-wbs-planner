@@ -183,6 +183,27 @@ button.danger:hover { background-color: var(--danger); color: #fff; }
 }
 .color-swatch:hover { transform: scale(1.15); }
 
+/* Stacked effect to indicate hidden children */
+.node-card.is-collapsed {
+    box-shadow: 
+        0 6px 0 -1px var(--node-bg), 
+        0 8px 0 0 rgba(255, 255, 255, 0.4), 
+        0 14px 0 -2px var(--node-bg), 
+        0 16px 0 0 rgba(255, 255, 255, 0.2),
+        0 24px 20px rgba(0, 0, 0, 0.9);
+    margin-bottom: 18px;
+}
+
+/* Light Mode */
+[data-theme="light"] .node-card.is-collapsed {
+    box-shadow: 
+        0 6px 0 -1px var(--node-bg), 
+        0 8px 0 0 var(--node-border), 
+        0 14px 0 -2px var(--node-bg), 
+        0 16px 0 0 var(--node-border),
+        0 24px 20px rgba(0, 0, 0, 0.25);
+}
+
 /* Warna default beradaptasi otomatis */
 .color-swatch.default-swatch {
     background: linear-gradient(135deg, #e0e0e0 50%, #2d3748 50%);
